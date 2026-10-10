@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEVEL UP</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Tahoma,sans-serif;
+background:#000;
+color:white;
+padding:20px;
+min-height:100vh;
+overflow-x:hidden;
+position:relative;
+}
+
+body::before{
+content:"";
+position:fixed;
+top:0;
+left:0;
+width:200%;
+height:200%;
+background:
+repeating-linear-gradient(
+45deg,
+transparent 0px,
+transparent 20px,
+rgba(255,0,0,0.18) 20px,
+rgba(255,0,0,0.18) 22px
+);
+animation:moveLines 10s linear infinite;
+z-index:-1;
+}
+
+@keyframes moveLines{
+from{
+transform:translate(-25%,-25%);
+}
+to{
+transform:translate(0,0);
+}
+}
+
+h1{
+text-align:center;
+font-size:55px;
+margin-bottom:30px;
+color:#ff0000;
+text-shadow:
+0 0 10px #ff0000,
+0 0 20px #ff0000,
+0 0 40px #ff0000;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+}
+
+.room{
+background:rgba(20,20,20,.9);
+border:1px solid #ff0000;
+border-radius:15px;
+padding:20px;
+margin-bottom:20px;
+box-shadow:0 0 15px rgba(255,0,0,.4);
+}
+
+.room h2{
+color:#ff4444;
+margin-bottom:15px;
+}
+
+.inputs{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+align-items:center;
+}
+
+input{
+padding:10px;
+border:none;
+border-radius:8px;
+font-size:16px;
+}
+
+button{
+background:#ff0000;
+color:white;
+border:none;
+padding:10px 20px;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+background:#cc0000;
+}
+
+.result{
+margin-top:15px;
+font-size:18px;
+color:#00ff88;
+}
+
+.total-box{
+margin-top:30px;
+text-align:center;
+background:#111;
+border:2px solid #ff0000;
+padding:20px;
+border-radius:15px;
+font-size:28px;
+font-weight:bold;
+color:#00ff88;
+box-shadow:0 0 20px rgba(255,0,0,.5);
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>LEVEL UP</h1>
+
+<div class="container">
+
+<div class="room">
+<h2>Room 1 | 100 جنيه / ساعة</h2>
+<div class="inputs">
+فتح <input type="time" id="open1">
+قفل <input type="time" id="close1">
+<button onclick="calculate(1,100)">احسب</button>
+</div>
+<div class="result" id="result1"></div>
+</div>
+
+<div class="room">
+<h2>Room 2 | 100 جنيه / ساعة</h2>
+<div class="inputs">
+فتح <input type="time" id="open2">
+قفل <input type="time" id="close2">
+<button onclick="calculate(2,100)">احسب</button>
+</div>
+<div class="result" id="result2"></div>
+</div>
+
+<div class="room">
+<h2>Room 3 | 120 جنيه / ساعة</h2>
+<div class="inputs">
+فتح <input type="time" id="open3">
+قفل <input type="time" id="close3">
+<button onclick="calculate(3,120)">احسب</button>
+</div>
+<div class="result" id="result3"></div>
+</div>
+
+<div class="room">
+<h2>Room 4 | 200 جنيه / ساعة</h2>
+<div class="inputs">
+فتح <input type="time" id="open4">
+قفل <input type="time" id="close4">
+<button onclick="calculate(4,200)">احسب</button>
+</div>
+<div class="result" id="result4"></div>
+</div>
+
+<div class="room">
+<h2>Room 5 | 80 جنيه / ساعة</h2>
+<div class="inputs">
+فتح <input type="time" id="open5">
+قفل <input type="time" id="close5">
+<button onclick="calculate(5,80)">احسب</button>
+</div>
+<div class="result" id="result5"></div>
+</div>
+
+<div class="total-box">
+إجمالي الأرباح: <span id="grandTotal">0</span> جنيه
+</div>
+
+</div>
+
+<script>
+
+let totals = [0,0,0,0,0];
+
+function calculate(room,price){
+
+let open=document.getElementById("open"+room).value;
+let close=document.getElementById("close"+room).value;
+
+if(!open || !close){
+alert("اختر وقت الفتح والقفل");
+return;
+}
+
+let start=new Date("2024-01-01 "+open);
+let end=new Date("2024-01-01 "+close);
+
+let hours=(end-start)/(1000*60*60);
+
+if(hours<0){
+hours+=24;
+}
+
+let total=hours*price;
+
+totals[room-1]=total;
+
+document.getElementById("result"+room).innerHTML=
+"عدد الساعات: "+hours.toFixed(2)+" ساعة<br>الإجمالي: "+total.toFixed(2)+" جنيه";
+
+updateGrandTotal();
+}
+
+function updateGrandTotal(){
+
+let sum=totals.reduce((a,b)=>a+b,0);
+
+document.getElementById("grandTotal").innerText=
+sum.toFixed(2);
+
+}
+
+</script>
+
+</body>
+</html>
