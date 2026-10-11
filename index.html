@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -6,106 +7,150 @@
 <title>🎮 LEVEL UP 🎮</title>
 
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-body{
-font-family:Tahoma,sans-serif;
-padding:20px;
-color:#fff;
-background:#050505;
-min-height:100vh;
-background:
-radial-gradient(circle at 20% 20%, rgba(255,0,0,.2), transparent 30%),
-radial-gradient(circle at 80% 30%, rgba(255,0,0,.15), transparent 35%),
-#050505;
+body {
+  font-family: Tahoma, sans-serif;
+  padding: 15px;
+  color: #fff;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,0,0,.2), transparent 30%),
+    radial-gradient(circle at 80% 30%, rgba(255,0,0,.15), transparent 35%),
+    #050505;
 }
 
-h1{
-text-align:center;
-font-size:50px;
-margin-bottom:25px;
-color:#ff0000;
-text-shadow:0 0 15px #ff0000;
+h1 {
+  text-align: center;
+  font-size: clamp(28px, 6vw, 48px);
+  margin: 15px 0 25px;
+  color: #ff0000;
+  text-shadow: 0 0 15px #ff0000;
 }
 
-.room{
-background:rgba(20,20,20,.9);
-border:1px solid #ff0000;
-border-radius:15px;
-padding:15px;
-margin-bottom:20px;
+.room {
+  background: rgba(20,20,20,.95);
+  border: 1px solid #ff0000;
+  border-radius: 15px;
+  padding: 18px;
+  margin-bottom: 18px;
 }
 
-.room h2{
-margin-bottom:15px;
+.room h2 {
+  font-size: 21px;
+  margin-bottom: 12px;
 }
 
-input{
-padding:8px;
-border:none;
-border-radius:8px;
-margin:5px;
+.price {
+  color: #ff7777;
+  margin-bottom: 15px;
 }
 
-button{
-background:#ff0000;
-color:#fff;
-border:none;
-padding:10px 15px;
-border-radius:8px;
-cursor:pointer;
+.timer {
+  text-align: center;
+  font-size: clamp(28px, 7vw, 40px);
+  font-weight: bold;
+  color: #00ff99;
+  margin: 15px 0;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
 }
 
-.result{
-margin-top:10px;
-color:#00ff99;
-font-weight:bold;
+.status {
+  text-align: center;
+  color: #aaa;
+  margin-bottom: 12px;
 }
 
-.history{
-margin-top:15px;
-border-top:1px solid #333;
-padding-top:10px;
+.buttons {
+  display: flex;
+  gap: 10px;
 }
 
-.history-title{
-color:#ff7777;
-margin-bottom:10px;
+button {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 8px;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-.history-item{
-background:#1a1a1a;
-padding:10px;
-border-radius:8px;
-margin-bottom:8px;
-line-height:1.8;
+.start {
+  background: #008f55;
 }
 
-.total-box{
-background:#111;
-border:2px solid #ff0000;
-padding:20px;
-border-radius:15px;
-text-align:center;
-font-size:24px;
-color:#00ff99;
-font-weight:bold;
+.stop {
+  background: #ff0000;
 }
 
-.game-icon{
-font-size:26px;
+button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
 }
 
-.billiards-icon{
-font-size:26px;
+.result {
+  margin-top: 14px;
+  color: #00ff99;
+  line-height: 1.9;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.history {
+  margin-top: 18px;
+  border-top: 1px solid #333;
+  padding-top: 12px;
+}
+
+.history-title {
+  color: #ff7777;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.history-item {
+  background: #1a1a1a;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 9px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  color: #777;
+  font-size: 14px;
+}
+
+.total-box {
+  background: #111;
+  border: 2px solid #ff0000;
+  padding: 20px 10px;
+  border-radius: 15px;
+  text-align: center;
+  font-size: 22px;
+  color: #00ff99;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+.total-box small {
+  display: block;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: normal;
+  margin-top: 10px;
 }
 </style>
-
 </head>
+
 <body>
 
 <h1>🎮 LEVEL UP 🎮</h1>
@@ -113,154 +158,267 @@ font-size:26px;
 <div id="rooms"></div>
 
 <div class="total-box">
-إجمالي الأرباح:
-<span id="grandTotal">0</span>
-جنيه
+  💰 إجمالي الأرباح
+  <div><span id="grandTotal">0.00</span> جنيه</div>
+  <small>إجمالي الجلسات المسجلة والمكتملة</small>
 </div>
 
 <script>
-
 const roomData = [
-{ name:"🎮 Room 1", price:100 },
-{ name:"🎮 Room 2", price:100 },
-{ name:"🎮 Room 3", price:120 },
-{ name:"🎮 Room 4", price:200 },
-{ name:"🎮 Room 5", price:80 },
-{ name:"🎱 Billiards", price:80 }
+  { name: "🎮 Room 1", price: 100 },
+  { name: "🎮 Room 2", price: 100 },
+  { name: "🎮 Room 3", price: 120 },
+  { name: "🎮 Room 4", price: 200 },
+  { name: "🎮 Room 5", price: 80 },
+  { name: "🎱 Billiards", price: 80 }
 ];
 
-let totals = JSON.parse(localStorage.getItem("totals")) || [0,0,0,0,0,0];
+const STORAGE_KEY = "levelUpDataV2";
+
+function loadData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    if (
+      saved &&
+      Array.isArray(saved.totals) &&
+      saved.totals.length === roomData.length &&
+      Array.isArray(saved.histories) &&
+      saved.histories.length === roomData.length &&
+      Array.isArray(saved.active) &&
+      saved.active.length === roomData.length
+    ) {
+      return saved;
+    }
+  } catch (error) {}
+
+  return {
+    totals: [0, 0, 0, 0, 0, 0],
+    histories: [[], [], [], [], [], []],
+    active: [null, null, null, null, null, null]
+  };
+}
+
+let data = loadData();
 
 const roomsContainer = document.getElementById("rooms");
 
-roomData.forEach((room,index)=>{
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    alert("تعذر حفظ البيانات. تأكد من مساحة التخزين في المتصفح.");
+  }
+}
 
-roomsContainer.innerHTML += `
-<div class="room">
+function money(value) {
+  return Number(value).toFixed(2);
+}
 
-<h2>${room.name} | ${room.price} جنيه / ساعة</h2>
+function formatDuration(ms) {
+  let seconds = Math.floor(ms / 1000);
+  const hours = Math.floor(seconds / 3600);
 
-فتح
-<input type="time" id="open${index}">
+  seconds %= 3600;
 
-قفل
-<input type="time" id="close${index}">
+  const minutes = Math.floor(seconds / 60);
+  seconds %= 60;
 
-<button onclick="calculate(${index},${room.price})">
-احسب
-</button>
+  return [hours, minutes, seconds]
+    .map(n => String(n).padStart(2, "0"))
+    .join(":");
+}
 
-<div class="result" id="result${index}"></div>
+function formatDate(timestamp) {
+  return new Date(timestamp).toLocaleString("ar-EG");
+}
 
-<div class="history">
-<div class="history-title">📋 سجل الجلسات</div>
-<div id="history${index}"></div>
-</div>
+function elapsed(room) {
+  const session = data.active[room];
 
-</div>
-`;
+  return session
+    ? Math.max(0, Date.now() - session.start)
+    : 0;
+}
 
+roomData.forEach((room, index) => {
+  const card = document.createElement("div");
+
+  card.className = "room";
+
+  card.innerHTML = `
+    <h2>${room.name}</h2>
+
+    <div class="price">
+      ${room.price} جنيه / ساعة
+    </div>
+
+    <div class="status" id="status${index}">
+      الجلسة متوقفة
+    </div>
+
+    <div class="timer" id="timer${index}">
+      00:00:00
+    </div>
+
+    <div class="buttons">
+      <button
+        class="start"
+        id="start${index}"
+        onclick="startTimer(${index})">
+        ▶️ ابدأ التايم
+      </button>
+
+      <button
+        class="stop"
+        id="stop${index}"
+        onclick="stopTimer(${index})"
+        disabled>
+        ⏹️ إنهاء التايم
+      </button>
+    </div>
+
+    <div class="result" id="result${index}"></div>
+
+    <div class="history">
+      <div class="history-title">📋 سجل الجلسات</div>
+      <div id="history${index}"></div>
+    </div>
+  `;
+
+  roomsContainer.appendChild(card);
 });
 
-window.onload = function(){
+function startTimer(room) {
+  if (data.active[room]) {
+    alert("العداد شغال بالفعل في هذه الغرفة!");
+    return;
+  }
 
-for(let i=0;i<6;i++){
+  data.active[room] = {
+    start: Date.now()
+  };
 
-let savedHistory =
-localStorage.getItem("history"+i);
+  saveData();
+  renderRoom(room);
 
-if(savedHistory){
-document.getElementById("history"+i).innerHTML =
-savedHistory;
+  document.getElementById("result" + room).textContent =
+    "▶️ بدأت الجلسة بنجاح.";
 }
 
+function stopTimer(room) {
+  const session = data.active[room];
+
+  if (!session) {
+    alert("ابدأ التايم الأول!");
+    return;
+  }
+
+  const end = Date.now();
+  const duration = Math.max(0, end - session.start);
+  const total = duration / 3600000 * roomData[room].price;
+
+  const record = {
+    start: session.start,
+    end: end,
+    duration: duration,
+    amount: total
+  };
+
+  data.histories[room].unshift(record);
+  data.totals[room] += total;
+  data.active[room] = null;
+
+  saveData();
+  renderRoom(room);
+  updateTotal();
+
+  document.getElementById("result" + room).textContent =
+    `⏳ المدة: ${formatDuration(duration)} | 💰 الحساب: ${money(total)} جنيه`;
 }
 
-updateTotal();
+function renderRoom(room) {
+  const active = data.active[room];
 
-};
+  document.getElementById("start" + room).disabled = !!active;
+  document.getElementById("stop" + room).disabled = !active;
 
-function calculate(room,price){
+  document.getElementById("status" + room).textContent =
+    active ? "🟢 الجلسة شغالة الآن" : "الجلسة متوقفة";
 
-let open =
-document.getElementById("open"+room).value;
+  document.getElementById("timer" + room).textContent =
+    active ? formatDuration(elapsed(room)) : "00:00:00";
 
-let close =
-document.getElementById("close"+room).value;
+  const historyElement =
+    document.getElementById("history" + room);
 
-if(!open || !close){
-alert("اختر وقت الفتح والقفل");
-return;
+  historyElement.replaceChildren();
+
+  if (!data.histories[room].length) {
+    const empty = document.createElement("div");
+
+    empty.className = "empty";
+    empty.textContent = "لا توجد جلسات مسجلة حتى الآن.";
+
+    historyElement.appendChild(empty);
+    return;
+  }
+
+  data.histories[room].forEach(record => {
+    const item = document.createElement("div");
+
+    item.className = "history-item";
+
+    const lines = [
+      "📅 " + formatDate(record.start),
+      "▶️ البداية: " +
+        new Date(record.start).toLocaleTimeString("ar-EG"),
+      "⏹️ النهاية: " +
+        new Date(record.end).toLocaleTimeString("ar-EG"),
+      "⏳ المدة: " + formatDuration(record.duration),
+      "💰 المبلغ: " + money(record.amount) + " جنيه"
+    ];
+
+    lines.forEach((line, i) => {
+      if (i > 0) {
+        item.appendChild(document.createElement("br"));
+      }
+
+      item.appendChild(document.createTextNode(line));
+    });
+
+    historyElement.appendChild(item);
+  });
 }
 
-let start =
-new Date("2024-01-01 "+open);
+function updateTotal() {
+  const sum = data.totals.reduce((a, b) => a + b, 0);
 
-let end =
-new Date("2024-01-01 "+close);
-
-let hours =
-(end-start)/(1000*60*60);
-
-if(hours<0){
-hours += 24;
+  document.getElementById("grandTotal").textContent =
+    money(sum);
 }
 
-let total = hours * price;
-
-totals[room] += total;
-
-localStorage.setItem(
-"totals",
-JSON.stringify(totals)
-);
-
-document.getElementById("result"+room).innerHTML =
-`
-⏳ عدد الساعات: ${hours.toFixed(2)} ساعة
-<br>
-💰 الإجمالي: ${total.toFixed(2)} جنيه
-`;
-
-let history =
-document.getElementById("history"+room);
-
-history.innerHTML =
-`
-<div class="history-item">
-📅 ${new Date().toLocaleDateString('ar-EG')}
-<br>
-🕒 فتح: ${open}
-<br>
-🔒 قفل: ${close}
-<br>
-⏳ الساعات: ${hours.toFixed(2)}
-<br>
-💰 المبلغ: ${total.toFixed(2)} جنيه
-</div>
-`
-+
-history.innerHTML;
-
-localStorage.setItem(
-"history"+room,
-history.innerHTML
-);
-
-updateTotal();
-
+function updateTimers() {
+  roomData.forEach((room, index) => {
+    if (data.active[index]) {
+      document.getElementById("timer" + index).textContent =
+        formatDuration(elapsed(index));
+    }
+  });
 }
 
-function updateTotal(){
+function renderAll() {
+  roomData.forEach((room, index) => {
+    renderRoom(index);
+  });
 
-let sum =
-totals.reduce((a,b)=>a+b,0);
-
-document.getElementById("grandTotal").innerText =
-sum.toFixed(2);
-
+  updateTotal();
+  updateTimers();
 }
 
+renderAll();
+
+setInterval(updateTimers, 1000);
 </script>
 
 </body>
