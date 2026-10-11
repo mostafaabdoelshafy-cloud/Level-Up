@@ -1,11 +1,11 @@
 <!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 LEVEL UP 🎮</title>
 
-
-
-
-LEVEL UP
-
-
+<style>
 *{
 margin:0;
 padding:0;
@@ -15,12 +15,253 @@ box-sizing:border-box;
 body{
 font-family:Tahoma,sans-serif;
 padding:20px;
-background:#000;
 color:#fff;
+background:#050505;
+min-height:100vh;
+background:
+radial-gradient(circle at 20% 20%, rgba(255,0,0,.2), transparent 30%),
+radial-gradient(circle at 80% 30%, rgba(255,0,0,.15), transparent 35%),
+#050505;
 }
 
 h1{
 text-align:center;
-color:#ff0000;
 font-size:50px;
-margin
+margin-bottom:25px;
+color:#ff0000;
+text-shadow:0 0 15px #ff0000;
+}
+
+.room{
+background:rgba(20,20,20,.9);
+border:1px solid #ff0000;
+border-radius:15px;
+padding:15px;
+margin-bottom:20px;
+}
+
+.room h2{
+margin-bottom:15px;
+}
+
+input{
+padding:8px;
+border:none;
+border-radius:8px;
+margin:5px;
+}
+
+button{
+background:#ff0000;
+color:#fff;
+border:none;
+padding:10px 15px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.result{
+margin-top:10px;
+color:#00ff99;
+font-weight:bold;
+}
+
+.history{
+margin-top:15px;
+border-top:1px solid #333;
+padding-top:10px;
+}
+
+.history-title{
+color:#ff7777;
+margin-bottom:10px;
+}
+
+.history-item{
+background:#1a1a1a;
+padding:10px;
+border-radius:8px;
+margin-bottom:8px;
+line-height:1.8;
+}
+
+.total-box{
+background:#111;
+border:2px solid #ff0000;
+padding:20px;
+border-radius:15px;
+text-align:center;
+font-size:24px;
+color:#00ff99;
+font-weight:bold;
+}
+
+.game-icon{
+font-size:26px;
+}
+
+.billiards-icon{
+font-size:26px;
+}
+</style>
+
+</head>
+<body>
+
+<h1>🎮 LEVEL UP 🎮</h1>
+
+<div id="rooms"></div>
+
+<div class="total-box">
+إجمالي الأرباح:
+<span id="grandTotal">0</span>
+جنيه
+</div>
+
+<script>
+
+const roomData = [
+{ name:"🎮 Room 1", price:100 },
+{ name:"🎮 Room 2", price:100 },
+{ name:"🎮 Room 3", price:120 },
+{ name:"🎮 Room 4", price:200 },
+{ name:"🎮 Room 5", price:80 },
+{ name:"🎱 Billiards", price:80 }
+];
+
+let totals = JSON.parse(localStorage.getItem("totals")) || [0,0,0,0,0,0];
+
+const roomsContainer = document.getElementById("rooms");
+
+roomData.forEach((room,index)=>{
+
+roomsContainer.innerHTML += `
+<div class="room">
+
+<h2>${room.name} | ${room.price} جنيه / ساعة</h2>
+
+فتح
+<input type="time" id="open${index}">
+
+قفل
+<input type="time" id="close${index}">
+
+<button onclick="calculate(${index},${room.price})">
+احسب
+</button>
+
+<div class="result" id="result${index}"></div>
+
+<div class="history">
+<div class="history-title">📋 سجل الجلسات</div>
+<div id="history${index}"></div>
+</div>
+
+</div>
+`;
+
+});
+
+window.onload = function(){
+
+for(let i=0;i<6;i++){
+
+let savedHistory =
+localStorage.getItem("history"+i);
+
+if(savedHistory){
+document.getElementById("history"+i).innerHTML =
+savedHistory;
+}
+
+}
+
+updateTotal();
+
+};
+
+function calculate(room,price){
+
+let open =
+document.getElementById("open"+room).value;
+
+let close =
+document.getElementById("close"+room).value;
+
+if(!open || !close){
+alert("اختر وقت الفتح والقفل");
+return;
+}
+
+let start =
+new Date("2024-01-01 "+open);
+
+let end =
+new Date("2024-01-01 "+close);
+
+let hours =
+(end-start)/(1000*60*60);
+
+if(hours<0){
+hours += 24;
+}
+
+let total = hours * price;
+
+totals[room] += total;
+
+localStorage.setItem(
+"totals",
+JSON.stringify(totals)
+);
+
+document.getElementById("result"+room).innerHTML =
+`
+⏳ عدد الساعات: ${hours.toFixed(2)} ساعة
+<br>
+💰 الإجمالي: ${total.toFixed(2)} جنيه
+`;
+
+let history =
+document.getElementById("history"+room);
+
+history.innerHTML =
+`
+<div class="history-item">
+📅 ${new Date().toLocaleDateString('ar-EG')}
+<br>
+🕒 فتح: ${open}
+<br>
+🔒 قفل: ${close}
+<br>
+⏳ الساعات: ${hours.toFixed(2)}
+<br>
+💰 المبلغ: ${total.toFixed(2)} جنيه
+</div>
+`
++
+history.innerHTML;
+
+localStorage.setItem(
+"history"+room,
+history.innerHTML
+);
+
+updateTotal();
+
+}
+
+function updateTotal(){
+
+let sum =
+totals.reduce((a,b)=>a+b,0);
+
+document.getElementById("grandTotal").innerText =
+sum.toFixed(2);
+
+}
+
+</script>
+
+</body>
+</html>
