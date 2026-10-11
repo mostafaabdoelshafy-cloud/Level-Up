@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
 
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>LEVEL UP</title>
 
-<style>
+
+
+
+🎮 LEVEL UP 🎮
+
+
 
 *{
 margin:0;
@@ -84,15 +84,13 @@ border:1px solid rgba(255,0,0,.5);
 border-radius:18px;
 padding:20px;
 margin-bottom:20px;
-box-shadow:
-0 0 15px rgba(255,0,0,.4);
+box-shadow:0 0 15px rgba(255,0,0,.4);
 }
 
 .room:hover{
 transform:translateY(-3px);
 transition:.3s;
-box-shadow:
-0 0 25px rgba(255,0,0,.9);
+box-shadow:0 0 25px rgba(255,0,0,.9);
 }
 
 .room h2{
@@ -128,142 +126,77 @@ font-size:15px;
 button:hover{
 background:#cc0000;
 box-shadow:
-0 0 10px #ff0000,
-0 0 20px #ff0000;
-}
-
-.result{
-margin-top:15px;
-font-size:18px;
-color:#00ff99;
-}
-
-.game-icon{
-display:inline-block;
-font-size:28px;
-margin-left:8px;
-animation:gameGlow 1.5s infinite alternate;
-}
-
-.billiards-icon{
-display:inline-block;
-font-size:28px;
-margin-left:8px;
-animation:billiardsGlow 1.5s infinite alternate;
-}
-
-@keyframes gameGlow{
-
-from{
-filter:
-drop-shadow(0 0 5px #ff0000);
-}
-
-to{
-filter:
-drop-shadow(0 0 15px #ff0000)
-drop-shadow(0 0 30px #ff0000);
-}
-
-}
-
-@keyframes billiardsGlow{
-
-from{
-filter:
-drop-shadow(0 0 5px #00ff99);
-}
-
-to{
-filter:
-drop-shadow(0 0 15px #00ff99)
-drop-shadow(0 0 30px #00ff99);
-}
-
-}
-
-.total-box{
-margin-top:25px;
-text-align:center;
-padding:25px;
-border-radius:15px;
-font-size:28px;
-font-weight:bold;
-background:rgba(0,0,0,.7);
-border:2px solid #ff0000;
-color:#00ff99;
-
-box-shadow:
-0 0 20px rgba(255,0,0,.8);
-}
-
-</style>
-</head>
-
-<body>
-
-<h1>🎮 LEVEL UP 🎮</h1>
-
-<div class="container">
-
-<div class="room">
-<h2><span class="game-icon">🎮</span>Room 1 | 100 جنيه / ساعة</h2>
-<div class="inputs">
-فتح <input type="time" id="open1">
-قفل <input type="time" id="close1">
-<button onclick="calculate(1,100)">احسب</button>
-</div>
-<div class="result" id="result1"></div>
-</div>
-
-<div class="room">
-<h2><span class="game-icon">🎮</span>Room 2 | 100 جنيه / ساعة</h2>
-<div class="inputs">
-فتح <input type="time" id="open2">
-قفل <input type="time" id="close2">
-<button onclick="calculate(2,100)">احسب</button>
-</div>
-<div class="result" id="result2"></div>
-</div>
-
+0
 <div class="room">
 <h2><span class="game-icon">🎮</span>Room 3 | 120 جنيه / ساعة</h2>
+
 <div class="inputs">
 فتح <input type="time" id="open3">
 قفل <input type="time" id="close3">
 <button onclick="calculate(3,120)">احسب</button>
 </div>
+
 <div class="result" id="result3"></div>
+
+<div class="history">
+<div class="history-title">📋 سجل الجلسات</div>
+<div id="history3"></div>
+</div>
+
 </div>
 
 <div class="room">
 <h2><span class="game-icon">🎮</span>Room 4 | 200 جنيه / ساعة</h2>
+
 <div class="inputs">
 فتح <input type="time" id="open4">
 قفل <input type="time" id="close4">
 <button onclick="calculate(4,200)">احسب</button>
 </div>
+
 <div class="result" id="result4"></div>
+
+<div class="history">
+<div class="history-title">📋 سجل الجلسات</div>
+<div id="history4"></div>
+</div>
+
 </div>
 
 <div class="room">
 <h2><span class="game-icon">🎮</span>Room 5 | 80 جنيه / ساعة</h2>
+
 <div class="inputs">
 فتح <input type="time" id="open5">
 قفل <input type="time" id="close5">
 <button onclick="calculate(5,80)">احسب</button>
 </div>
+
 <div class="result" id="result5"></div>
+
+<div class="history">
+<div class="history-title">📋 سجل الجلسات</div>
+<div id="history5"></div>
+</div>
+
 </div>
 
 <div class="room">
 <h2><span class="billiards-icon">🎱</span>Billiards | 80 جنيه / ساعة</h2>
+
 <div class="inputs">
 فتح <input type="time" id="open6">
 قفل <input type="time" id="close6">
 <button onclick="calculate(6,80)">احسب</button>
 </div>
+
 <div class="result" id="result6"></div>
+
+<div class="history">
+<div class="history-title">📋 سجل الجلسات</div>
+<div id="history6"></div>
+</div>
+
 </div>
 
 <div class="total-box">
@@ -273,7 +206,6 @@ box-shadow:
 </div>
 
 </div>
-
 <script>
 
 let totals=[0,0,0,0,0,0];
@@ -303,11 +235,25 @@ totals[room-1]=total;
 
 document.getElementById("result"+room).innerHTML=
 `
-عدد الساعات : ${hours.toFixed(2)} ساعة <br>
-الإجمالي : ${total.toFixed(2)} جنيه
+⏳ عدد الساعات : ${hours.toFixed(2)} ساعة <br>
+💰 الإجمالي : ${total.toFixed(2)} جنيه
 `;
 
+let history=document.getElementById("history"+room);
+
+history.innerHTML=
+`
+<div class="history-item">
+🕒 وقت الفتح : ${open}<br>
+🔒 وقت القفل : ${close}<br>
+⏳ عدد الساعات : ${hours.toFixed(2)} ساعة<br>
+💰 التكلفة : ${total.toFixed(2)} جنيه
+</div>
+`
++ history.innerHTML;
+
 updateTotal();
+
 }
 
 function updateTotal(){
