@@ -50,6 +50,27 @@ h1 {
   margin-bottom: 15px;
 }
 
+.start-label {
+  display: block;
+  margin: 12px 0 8px;
+  color: #ddd;
+  font-size: 14px;
+}
+
+.start-time {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #ff0000;
+  background: #111;
+  color: white;
+  font-size: 16px;
+  direction: ltr;
+  color-scheme: dark;
+}
+
 .timer {
   text-align: center;
   font-size: clamp(28px, 7vw, 40px);
@@ -90,8 +111,9 @@ button {
   background: #ff0000;
 }
 
-button:disabled {
-  opacity: .35;
+button:disabled,
+.start-time:disabled {
+  opacity: .45;
   cursor: not-allowed;
 }
 
@@ -253,6 +275,17 @@ roomData.forEach((room, index) => {
       ${room.price} جنيه / ساعة
     </div>
 
+    <label class="start-label" for="startTime${index}">
+      ⏰ حدد وقت بداية التايم (اختياري):
+    </label>
+
+    <input
+      type="time"
+      class="start-time"
+      id="startTime${index}"
+      step="1"
+    >
+
     <div class="status" id="status${index}">
       الجلسة متوقفة
     </div>
@@ -295,15 +328,50 @@ function startTimer(room) {
     return;
   }
 
+  const input = document.getElementById("startTime" + room);
+  const now = new Date();
+  let start = Date.now();
+
+  if (input.value) {
+    const parts = input.value.split(":").map(Number);
+    const hours = parts[0];
+    const minutes = parts[1];
+    const seconds = parts[2] || 0;
+
+    if (
+      !Number.isInteger(hours) ||
+      !Number.isInteger(minutes) ||
+      !Number.isInteger(seconds) ||
+      hours < 0 || hours > 23 ||
+      minutes < 0 || minutes > 59 ||
+      seconds < 0 || seconds > 59
+    ) {
+      alert("اختار توقيت صحيح!");
+      return;
+    }
+
+    const selected = new Date(now);
+    selected.setHours(hours, minutes, seconds, 0);
+
+    start = selected.getTime();
+
+    // لو الوقت المختار لسه ماجاش، نرفض بدء الجلسة
+    if (start > Date.now()) {
+      alert("وقت البداية مينفعش يكون في المستقبل!");
+      return;
+    }
+  }
+
   data.active[room] = {
-    start: Date.now()
+    start: start
   };
 
   saveData();
   renderRoom(room);
+  updateTimers();
 
   document.getElementById("result" + room).textContent =
-    "▶️ بدأت الجلسة بنجاح.";
+    "▶️ بدأ التايم من الوقت المحدد.";
 }
 
 function stopTimer(room) {
@@ -342,6 +410,7 @@ function renderRoom(room) {
 
   document.getElementById("start" + room).disabled = !!active;
   document.getElementById("stop" + room).disabled = !active;
+  document.getElementById("startTime" + room).disabled = !!active;
 
   document.getElementById("status" + room).textContent =
     active ? "🟢 الجلسة شغالة الآن" : "الجلسة متوقفة";
@@ -349,8 +418,7 @@ function renderRoom(room) {
   document.getElementById("timer" + room).textContent =
     active ? formatDuration(elapsed(room)) : "00:00:00";
 
-  const historyElement =
-    document.getElementById("history" + room);
+  const historyElement = document.getElementById("history" + room);
 
   historyElement.replaceChildren();
 
@@ -394,8 +462,7 @@ function renderRoom(room) {
 function updateTotal() {
   const sum = data.totals.reduce((a, b) => a + b, 0);
 
-  document.getElementById("grandTotal").textContent =
-    money(sum);
+  document.getElementById("grandTotal").textContent = money(sum);
 }
 
 function updateTimers() {
