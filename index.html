@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -171,6 +170,10 @@ button:disabled,
   margin-top: 10px;
 }
 </style>
+
+<!-- استدعاء مكتبات Firebase المتوافقة مع الكود -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 
 <body>
@@ -186,6 +189,23 @@ button:disabled,
 </div>
 
 <script>
+// إعدادات مشروعك الخاصة على Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBGDsQYq_ry3hx56Ezhpn2Gy5kGaeUCGQE",
+  authDomain: "level-up-63005.firebaseapp.com",
+  databaseURL: "https://level-up-63005-default-rtdb.firebaseio.com",
+  projectId: "level-up-63005",
+  storageBucket: "level-up-63005.firebasestorage.app",
+  messagingSenderId: "888608963497",
+  appId: "1:888608963497:web:6c4ab76087e24fdfc662b8",
+  measurementId: "G-W8E5T2X7FB"
+};
+
+// تهيئة Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const dbRef = db.ref("levelUpData");
+
 const roomData = [
   { name: "🎮 Room 1", price: 100 },
   { name: "🎮 Room 2", price: 100 },
@@ -195,46 +215,16 @@ const roomData = [
   { name: "🎱 Billiards", price: 80 }
 ];
 
-const STORAGE_KEY = "levelUpDataV2";
-
-function loadData() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-
-    if (
-      saved &&
-      Array.isArray(saved.totals) &&
-      saved.totals.length === roomData.length &&
-      Array.isArray(saved.histories) &&
-      saved.histories.length === roomData.length &&
-      Array.isArray(saved.active) &&
-      saved.active.length === roomData.length
-    ) {
-      return saved;
-    }
-  } catch (error) {}
-
-  return {
-    totals: [0, 0, 0, 0, 0, 0],
-    histories: [[], [], [], [], [], []],
-    active: [null, null, null, null, null, null]
-  };
-}
-
-let data = loadData();
+let data = {
+  totals: [0, 0, 0, 0, 0, 0],
+  histories: [[], [], [], [], [], []],
+  active: [null, null, null, null, null, null]
+};
 
 const roomsContainer = document.getElementById("rooms");
 
-function saveData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (error) {
-    alert("تعذر حفظ البيانات. تأكد من مساحة التخزين في المتصفح.");
-  }
-}
-
 function money(value) {
-  return Number(value).toFixed(2);
+  return Number(value || 0).toFixed(2);
 }
 
 function formatDuration(ms) {
@@ -322,6 +312,24 @@ roomData.forEach((room, index) => {
   roomsContainer.appendChild(card);
 });
 
+// حفظ البيانات في Firebase
+function saveData() {
+  dbRef.set(data).catch(error => {
+    alert("تعذر حفظ البيانات في السحابة: " + error.message);
+  });
+}
+
+// التحديث اللحظي من السحابة لكل الأجهزة المفتوحة
+dbRef.on("value", (snapshot) => {
+  const val = snapshot.val();
+  if (val) {
+    data.totals = val.totals || [0, 0, 0, 0, 0, 0];
+    data.histories = val.histories ? val.histories.map(h => h || []) : [[], [], [], [], [], []];
+    data.active = val.active || [null, null, null, null, null, null];
+    renderAll();
+  }
+});
+
 function startTimer(room) {
   if (data.active[room]) {
     alert("العداد شغال بالفعل في هذه الغرفة!");
@@ -355,7 +363,6 @@ function startTimer(room) {
 
     start = selected.getTime();
 
-    // لو الوقت المختار لسه ماجاش، نرفض بدء الجلسة
     if (start > Date.now()) {
       alert("وقت البداية مينفعش يكون في المستقبل!");
       return;
@@ -367,11 +374,6 @@ function startTimer(room) {
   };
 
   saveData();
-  renderRoom(room);
-  updateTimers();
-
-  document.getElementById("result" + room).textContent =
-    "▶️ بدأ التايم من الوقت المحدد.";
 }
 
 function stopTimer(room) {
@@ -393,16 +395,15 @@ function stopTimer(room) {
     amount: total
   };
 
+  if (!data.histories[room]) {
+    data.histories[room] = [];
+  }
+
   data.histories[room].unshift(record);
-  data.totals[room] += total;
+  data.totals[room] = (data.totals[room] || 0) + total;
   data.active[room] = null;
 
   saveData();
-  renderRoom(room);
-  updateTotal();
-
-  document.getElementById("result" + room).textContent =
-    `⏳ المدة: ${formatDuration(duration)} | 💰 الحساب: ${money(total)} جنيه`;
 }
 
 function renderRoom(room) {
@@ -422,27 +423,24 @@ function renderRoom(room) {
 
   historyElement.replaceChildren();
 
-  if (!data.histories[room].length) {
-    const empty = document.createElement("div");
+  const historyList = data.histories[room] || [];
 
+  if (!historyList.length) {
+    const empty = document.createElement("div");
     empty.className = "empty";
     empty.textContent = "لا توجد جلسات مسجلة حتى الآن.";
-
     historyElement.appendChild(empty);
     return;
   }
 
-  data.histories[room].forEach(record => {
+  historyList.forEach(record => {
     const item = document.createElement("div");
-
     item.className = "history-item";
 
     const lines = [
       "📅 " + formatDate(record.start),
-      "▶️ البداية: " +
-        new Date(record.start).toLocaleTimeString("ar-EG"),
-      "⏹️ النهاية: " +
-        new Date(record.end).toLocaleTimeString("ar-EG"),
+      "▶️ البداية: " + new Date(record.start).toLocaleTimeString("ar-EG"),
+      "⏹️ النهاية: " + new Date(record.end).toLocaleTimeString("ar-EG"),
       "⏳ المدة: " + formatDuration(record.duration),
       "💰 المبلغ: " + money(record.amount) + " جنيه"
     ];
@@ -451,7 +449,6 @@ function renderRoom(room) {
       if (i > 0) {
         item.appendChild(document.createElement("br"));
       }
-
       item.appendChild(document.createTextNode(line));
     });
 
@@ -460,14 +457,13 @@ function renderRoom(room) {
 }
 
 function updateTotal() {
-  const sum = data.totals.reduce((a, b) => a + b, 0);
-
+  const sum = (data.totals || []).reduce((a, b) => a + b, 0);
   document.getElementById("grandTotal").textContent = money(sum);
 }
 
 function updateTimers() {
   roomData.forEach((room, index) => {
-    if (data.active[index]) {
+    if (data.active && data.active[index]) {
       document.getElementById("timer" + index).textContent =
         formatDuration(elapsed(index));
     }
@@ -482,8 +478,6 @@ function renderAll() {
   updateTotal();
   updateTimers();
 }
-
-renderAll();
 
 setInterval(updateTimers, 1000);
 </script>
