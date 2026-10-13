@@ -133,7 +133,6 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-/* عرض الحساب المالي لحظياً */
 .live-amount {
   text-align: center;
   font-size: 18px;
@@ -191,12 +190,33 @@ button:disabled,
 }
 
 .history-item {
+  position: relative;
   background: #1a1a1a;
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 9px;
   line-height: 1.9;
   overflow-wrap: anywhere;
+}
+
+/* زر حذف الجلسة */
+.delete-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #d9534f;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  width: auto;
+  flex: none;
+}
+
+.delete-btn:hover {
+  background: #c9302c;
 }
 
 .empty {
@@ -239,7 +259,6 @@ button:disabled,
   text-align: center;
 }
 
-/* صندوق تقارير الورديات السابقة */
 .shifts-history-box {
   background: rgba(15,15,15,.95);
   border: 1px solid #444;
@@ -456,7 +475,6 @@ function stopTimer(room) {
   const duration = Math.max(0, end - session.start);
   let rawTotal = (duration / 3600000) * roomData[room].price;
 
-  // طلب قيمة الخصم من المستخدم
   let discountInput = prompt(`المبلغ الإجمالي بدون خصم هو: ${money(rawTotal)} جنيه.\nأدخل قيمة الخصم (بالجنيه) إن وجدت، أو اتركها 0:`, "0");
   let discount = parseFloat(discountInput) || 0;
   
@@ -464,6 +482,7 @@ function stopTimer(room) {
   let finalTotal = Math.max(0, rawTotal - discount);
 
   const record = {
+    id: Date.now() + "_" + Math.random().toString(36).substr(2, 4),
     start: session.start,
     end: end,
     duration: duration,
@@ -484,7 +503,27 @@ function stopTimer(room) {
   renderAll();
 }
 
-// إغلاق الوردية وحفظ تقرير مالي في السجل وتصفير الأرباح
+// دالة حذف جلسة مسجلة بالخطأ
+function deleteRecord(room, recordId) {
+  const historyList = data.histories[room] || [];
+  const index = historyList.findIndex(r => r.id === recordId || (r.start === recordId)); // دعم المعرف القديم والجديد
+
+  if (index !== -1) {
+    const record = historyList[index];
+    if (confirm(`هل أنت متأكد من حذف هذه الجلسة بقيمة ${money(record.amount)} جنيه؟`)) {
+      // خصم المبلغ من إجمالي الغرفة
+      data.totals[room] = Math.max(0, (data.totals[room] || 0) - record.amount);
+      
+      // حذف الجلسة من السجل
+      data.histories[room].splice(index, 1);
+
+      saveData();
+      renderAll();
+      alert("تم حذف الجلسة وتحديث الحسابات بنجاح!");
+    }
+  }
+}
+
 function resetShift() {
   const sum = (data.totals || []).reduce((a, b) => a + b, 0);
   if (confirm(`إجمالي الأرباح الحالية للوردية هو ${money(sum)} جنيه.\nهل أنت متأكد من إغلاق الوردية، حفظ التقرير، وتصفير العدادات؟`)) {
@@ -556,6 +595,15 @@ function renderRoom(room) {
   historyList.forEach(record => {
     const item = document.createElement("div");
     item.className = "history-item";
+
+    const recordId = record.id || record.start;
+
+    // إضافة زر الحذف
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-btn";
+    delBtn.textContent = "🗑️ حذف";
+    delBtn.onclick = () => deleteRecord(room, recordId);
+    item.appendChild(delBtn);
 
     let lines = [
       "📅 " + formatDate(record.start),
