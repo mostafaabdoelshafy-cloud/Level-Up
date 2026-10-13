@@ -31,6 +31,59 @@ h1 {
   text-shadow: 0 0 15px #ff0000;
 }
 
+/* شاشة تسجيل الدخول */
+#loginOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 5, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.login-box {
+  background: #141414;
+  border: 2px solid #ff0000;
+  padding: 25px;
+  border-radius: 15px;
+  text-align: center;
+  width: 90%;
+  max-width: 350px;
+}
+
+.login-box h2 {
+  color: #ff0000;
+  margin-bottom: 15px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #ff0000;
+  background: #111;
+  color: white;
+  font-size: 16px;
+  text-align: center;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 12px;
+  background: #008f55;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .room {
   background: rgba(20,20,20,.95);
   border: 1px solid #ff0000;
@@ -169,16 +222,42 @@ button:disabled,
   font-weight: normal;
   margin-top: 10px;
 }
+
+.shift-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #b22222;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 25px;
+  text-align: center;
+}
 </style>
 
-<!-- استدعاء مكتبات Firebase المتوافقة مع الكود -->
+<!-- استدعاء مكتبات Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 
 <body>
 
+<!-- شاشة تسجيل الدخول -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <h2>🔒 تسجيل الدخول</h2>
+    <input type="password" id="passwordInput" placeholder="أدخل كلمة المرور">
+    <button onclick="checkPassword()">دخول</button>
+  </div>
+</div>
+
 <h1>🎮 LEVEL UP 🎮</h1>
+
+<button class="shift-btn" onclick="resetShift()">🔄 إغلاق الوردية وتصفير الأرباح</button>
 
 <div id="rooms"></div>
 
@@ -189,7 +268,26 @@ button:disabled,
 </div>
 
 <script>
-// إعدادات مشروعك الخاصة على Firebase
+// كلمة المرور الجديدة
+const ADMIN_PASSWORD = "LevellUp2";
+
+function checkPassword() {
+  const pass = document.getElementById("passwordInput").value;
+  if (pass === ADMIN_PASSWORD) {
+    document.getElementById("loginOverlay").style.display = "none";
+    sessionStorage.setItem("loggedIn", "true");
+  } else {
+    alert("كلمة المرور غير صحيحة!");
+  }
+}
+
+window.onload = function() {
+  if (sessionStorage.getItem("loggedIn") === "true") {
+    document.getElementById("loginOverlay").style.display = "none";
+  }
+};
+
+// إعدادات مشروعك على Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBGDsQYq_ry3hx56Ezhpn2Gy5kGaeUCGQE",
   authDomain: "level-up-63005.firebaseapp.com",
@@ -201,7 +299,6 @@ const firebaseConfig = {
   measurementId: "G-W8E5T2X7FB"
 };
 
-// تهيئة Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const dbRef = db.ref("levelUpData");
@@ -230,15 +327,10 @@ function money(value) {
 function formatDuration(ms) {
   let seconds = Math.floor(ms / 1000);
   const hours = Math.floor(seconds / 3600);
-
   seconds %= 3600;
-
   const minutes = Math.floor(seconds / 60);
   seconds %= 60;
-
-  return [hours, minutes, seconds]
-    .map(n => String(n).padStart(2, "0"))
-    .join(":");
+  return [hours, minutes, seconds].map(n => String(n).padStart(2, "0")).join(":");
 }
 
 function formatDate(timestamp) {
@@ -247,80 +339,38 @@ function formatDate(timestamp) {
 
 function elapsed(room) {
   const session = data.active && data.active[room];
-
-  return session
-    ? Math.max(0, Date.now() - session.start)
-    : 0;
+  return session ? Math.max(0, Date.now() - session.start) : 0;
 }
 
-// بناء الواجهة أولاً لضمان عدم ظهور الشاشة سوداء
 roomData.forEach((room, index) => {
   const card = document.createElement("div");
-
   card.className = "room";
-
   card.innerHTML = `
     <h2>${room.name}</h2>
-
-    <div class="price">
-      ${room.price} جنيه / ساعة
-    </div>
-
-    <label class="start-label" for="startTime${index}">
-      ⏰ حدد وقت بداية التايم (اختياري):
-    </label>
-
-    <input
-      type="time"
-      class="start-time"
-      id="startTime${index}"
-      step="1"
-    >
-
-    <div class="status" id="status${index}">
-      الجلسة متوقفة
-    </div>
-
-    <div class="timer" id="timer${index}">
-      00:00:00
-    </div>
-
+    <div class="price">${room.price} جنيه / ساعة</div>
+    <label class="start-label" for="startTime${index}">⏰ حدد وقت بداية التايم (اختياري):</label>
+    <input type="time" class="start-time" id="startTime${index}" step="1">
+    <div class="status" id="status${index}">الجلسة متوقفة</div>
+    <div class="timer" id="timer${index}">00:00:00</div>
     <div class="buttons">
-      <button
-        class="start"
-        id="start${index}"
-        onclick="startTimer(${index})">
-        ▶️ ابدأ التايم
-      </button>
-
-      <button
-        class="stop"
-        id="stop${index}"
-        onclick="stopTimer(${index})"
-        disabled>
-        ⏹️ إنهاء التايم
-      </button>
+      <button class="start" id="start${index}" onclick="startTimer(${index})">▶️ ابدأ التايم</button>
+      <button class="stop" id="stop${index}" onclick="stopTimer(${index})" disabled>⏹️ إنهاء التايم</button>
     </div>
-
     <div class="result" id="result${index}"></div>
-
     <div class="history">
       <div class="history-title">📋 سجل الجلسات</div>
       <div id="history${index}"></div>
     </div>
   `;
-
   roomsContainer.appendChild(card);
 });
 
-// حفظ البيانات في Firebase
 function saveData() {
   dbRef.set(data).catch(error => {
     alert("تعذر حفظ البيانات في السحابة: " + error.message);
   });
 }
 
-// الاستماع للبيانات من السحابة وتحديث العرض
 dbRef.on("value", (snapshot) => {
   const val = snapshot.val();
   if (val) {
@@ -331,7 +381,7 @@ dbRef.on("value", (snapshot) => {
   renderAll();
 }, (error) => {
   console.error("Firebase Error: ", error);
-  renderAll(); // عرض الواجهة محلياً حتى لو فشل الاتصال مؤقتاً
+  renderAll();
 });
 
 function startTimer(room) {
@@ -350,21 +400,13 @@ function startTimer(room) {
     const minutes = parts[1];
     const seconds = parts[2] || 0;
 
-    if (
-      !Number.isInteger(hours) ||
-      !Number.isInteger(minutes) ||
-      !Number.isInteger(seconds) ||
-      hours < 0 || hours > 23 ||
-      minutes < 0 || minutes > 59 ||
-      seconds < 0 || seconds > 59
-    ) {
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
       alert("اختار توقيت صحيح!");
       return;
     }
 
     const selected = new Date(now);
     selected.setHours(hours, minutes, seconds, 0);
-
     start = selected.getTime();
 
     if (start > Date.now()) {
@@ -377,16 +419,12 @@ function startTimer(room) {
     data.active = [null, null, null, null, null, null];
   }
 
-  data.active[room] = {
-    start: start
-  };
-
+  data.active[room] = { start: start };
   saveData();
 }
 
 function stopTimer(room) {
   const session = data.active && data.active[room];
-
   if (!session || !session.start) {
     alert("برجاء التأكد من بدء التايم لهذه الغرفة أولاً!");
     return;
@@ -415,6 +453,16 @@ function stopTimer(room) {
   renderAll();
 }
 
+function resetShift() {
+  const sum = (data.totals || []).reduce((a, b) => a + b, 0);
+  if (confirm(`إجمالي الأرباح الحالية هو ${money(sum)} جنيه.\nهل أنت متأكد من إغلاق الوردية وتصفير العدادات؟`)) {
+    data.totals = [0, 0, 0, 0, 0, 0];
+    saveData();
+    renderAll();
+    alert("تم تصفير الأرباح بنجاح لبدء وردية جديدة!");
+  }
+}
+
 function renderRoom(room) {
   const active = data.active && data.active[room];
 
@@ -440,7 +488,6 @@ function renderRoom(room) {
   if (!historyElement) return;
 
   historyElement.replaceChildren();
-
   const historyList = data.histories[room] || [];
 
   if (!historyList.length) {
@@ -464,9 +511,7 @@ function renderRoom(room) {
     ];
 
     lines.forEach((line, i) => {
-      if (i > 0) {
-        item.appendChild(document.createElement("br"));
-      }
+      if (i > 0) item.appendChild(document.createElement("br"));
       item.appendChild(document.createTextNode(line));
     });
 
@@ -497,12 +542,10 @@ function renderAll() {
   roomData.forEach((room, index) => {
     renderRoom(index);
   });
-
   updateTotal();
   updateTimers();
 }
 
-// تشغيل العدادات كل ثانية
 setInterval(updateTimers, 1000);
 </script>
 
