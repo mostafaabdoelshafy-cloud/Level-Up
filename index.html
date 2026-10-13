@@ -128,9 +128,18 @@ h1 {
   font-size: clamp(28px, 7vw, 40px);
   font-weight: bold;
   color: #00ff99;
-  margin: 15px 0;
+  margin: 10px 0 5px;
   direction: ltr;
   font-variant-numeric: tabular-nums;
+}
+
+/* عرض الحساب المالي لحظياً */
+.live-amount {
+  text-align: center;
+  font-size: 18px;
+  color: #ffcc00;
+  margin-bottom: 12px;
+  font-weight: bold;
 }
 
 .status {
@@ -167,14 +176,6 @@ button:disabled,
 .start-time:disabled {
   opacity: .45;
   cursor: not-allowed;
-}
-
-.result {
-  margin-top: 14px;
-  color: #00ff99;
-  line-height: 1.9;
-  font-weight: bold;
-  overflow-wrap: anywhere;
 }
 
 .history {
@@ -234,8 +235,22 @@ button:disabled,
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   text-align: center;
+}
+
+/* صندوق تقارير الورديات السابقة */
+.shifts-history-box {
+  background: rgba(15,15,15,.95);
+  border: 1px solid #444;
+  border-radius: 15px;
+  padding: 18px;
+  margin-top: 30px;
+}
+
+.shifts-history-box h3 {
+  color: #ff7777;
+  margin-bottom: 12px;
 }
 </style>
 
@@ -257,18 +272,24 @@ button:disabled,
 
 <h1>🎮 LEVEL UP 🎮</h1>
 
-<button class="shift-btn" onclick="resetShift()">🔄 إغلاق الوردية وتصفير الأرباح</button>
+<button class="shift-btn" onclick="resetShift()">🔄 إغلاق الوردية وحفظ التقرير وتصفير الأرباح</button>
 
 <div id="rooms"></div>
 
 <div class="total-box">
-  💰 إجمالي الأرباح
+  💰 إجمالي الأرباح الحالية
   <div><span id="grandTotal">0.00</span> جنيه</div>
-  <small>إجمالي الجلسات المسجلة والمكتملة</small>
+  <small>إجمالي الجلسات الحالية قبل إغلاق الوردية</small>
+</div>
+
+<div class="shifts-history-box">
+  <h3>📋 تقارير الورديات السابقة المسجلة</h3>
+  <div id="shiftsHistoryContainer">
+    <div class="empty">لا توجد ورديات مسجلة حتى الآن.</div>
+  </div>
 </div>
 
 <script>
-// كلمة المرور الجديدة
 const ADMIN_PASSWORD = "LevellUp2";
 
 function checkPassword() {
@@ -287,7 +308,6 @@ window.onload = function() {
   }
 };
 
-// إعدادات مشروعك على Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBGDsQYq_ry3hx56Ezhpn2Gy5kGaeUCGQE",
   authDomain: "level-up-63005.firebaseapp.com",
@@ -315,7 +335,8 @@ const roomData = [
 let data = {
   totals: [0, 0, 0, 0, 0, 0],
   histories: [[], [], [], [], [], []],
-  active: [null, null, null, null, null, null]
+  active: [null, null, null, null, null, null],
+  shiftsHistory: []
 };
 
 const roomsContainer = document.getElementById("rooms");
@@ -352,11 +373,11 @@ roomData.forEach((room, index) => {
     <input type="time" class="start-time" id="startTime${index}" step="1">
     <div class="status" id="status${index}">الجلسة متوقفة</div>
     <div class="timer" id="timer${index}">00:00:00</div>
+    <div class="live-amount" id="liveAmount${index}">المبلغ الحالي: 0.00 جنيه</div>
     <div class="buttons">
       <button class="start" id="start${index}" onclick="startTimer(${index})">▶️ ابدأ التايم</button>
       <button class="stop" id="stop${index}" onclick="stopTimer(${index})" disabled>⏹️ إنهاء التايم</button>
     </div>
-    <div class="result" id="result${index}"></div>
     <div class="history">
       <div class="history-title">📋 سجل الجلسات</div>
       <div id="history${index}"></div>
@@ -377,6 +398,7 @@ dbRef.on("value", (snapshot) => {
     data.totals = val.totals || [0, 0, 0, 0, 0, 0];
     data.histories = val.histories ? val.histories.map(h => h || []) : [[], [], [], [], [], []];
     data.active = val.active || [null, null, null, null, null, null];
+    data.shiftsHistory = val.shiftsHistory || [];
   }
   renderAll();
 }, (error) => {
@@ -432,13 +454,22 @@ function stopTimer(room) {
 
   const end = Date.now();
   const duration = Math.max(0, end - session.start);
-  const total = (duration / 3600000) * roomData[room].price;
+  let rawTotal = (duration / 3600000) * roomData[room].price;
+
+  // طلب قيمة الخصم من المستخدم
+  let discountInput = prompt(`المبلغ الإجمالي بدون خصم هو: ${money(rawTotal)} جنيه.\nأدخل قيمة الخصم (بالجنيه) إن وجدت، أو اتركها 0:`, "0");
+  let discount = parseFloat(discountInput) || 0;
+  
+  if (discount < 0) discount = 0;
+  let finalTotal = Math.max(0, rawTotal - discount);
 
   const record = {
     start: session.start,
     end: end,
     duration: duration,
-    amount: total
+    rawAmount: rawTotal,
+    discount: discount,
+    amount: finalTotal
   };
 
   if (!data.histories[room]) {
@@ -446,20 +477,32 @@ function stopTimer(room) {
   }
 
   data.histories[room].unshift(record);
-  data.totals[room] = (data.totals[room] || 0) + total;
+  data.totals[room] = (data.totals[room] || 0) + finalTotal;
   data.active[room] = null;
 
   saveData();
   renderAll();
 }
 
+// إغلاق الوردية وحفظ تقرير مالي في السجل وتصفير الأرباح
 function resetShift() {
   const sum = (data.totals || []).reduce((a, b) => a + b, 0);
-  if (confirm(`إجمالي الأرباح الحالية هو ${money(sum)} جنيه.\nهل أنت متأكد من إغلاق الوردية وتصفير العدادات؟`)) {
+  if (confirm(`إجمالي الأرباح الحالية للوردية هو ${money(sum)} جنيه.\nهل أنت متأكد من إغلاق الوردية، حفظ التقرير، وتصفير العدادات؟`)) {
+    
+    const shiftReport = {
+      date: Date.now(),
+      totalAmount: sum
+    };
+
+    if (!data.shiftsHistory) {
+      data.shiftsHistory = [];
+    }
+    data.shiftsHistory.unshift(shiftReport);
+
     data.totals = [0, 0, 0, 0, 0, 0];
     saveData();
     renderAll();
-    alert("تم تصفير الأرباح بنجاح لبدء وردية جديدة!");
+    alert("تم إغلاق الوردية وحفظ التقرير بنجاح!");
   }
 }
 
@@ -480,8 +523,20 @@ function renderRoom(room) {
   }
 
   const timerEl = document.getElementById("timer" + room);
+  const liveAmountEl = document.getElementById("liveAmount" + room);
+
   if (timerEl) {
     timerEl.textContent = active ? formatDuration(elapsed(room)) : "00:00:00";
+  }
+
+  if (liveAmountEl) {
+    if (active) {
+      let currentDuration = elapsed(room);
+      let currentAmount = (currentDuration / 3600000) * roomData[room].price;
+      liveAmountEl.textContent = `المبلغ الحالي: ${money(currentAmount)} جنيه`;
+    } else {
+      liveAmountEl.textContent = "المبلغ الحالي: 0.00 جنيه";
+    }
   }
 
   const historyElement = document.getElementById("history" + room);
@@ -502,13 +557,17 @@ function renderRoom(room) {
     const item = document.createElement("div");
     item.className = "history-item";
 
-    const lines = [
+    let lines = [
       "📅 " + formatDate(record.start),
       "▶️ البداية: " + new Date(record.start).toLocaleTimeString("ar-EG"),
       "⏹️ النهاية: " + new Date(record.end).toLocaleTimeString("ar-EG"),
-      "⏳ المدة: " + formatDuration(record.duration),
-      "💰 المبلغ: " + money(record.amount) + " جنيه"
+      "⏳ المدة: " + formatDuration(record.duration)
     ];
+
+    if (record.discount && record.discount > 0) {
+      lines.push("🏷️ الخصم: " + money(record.discount) + " جنيه");
+    }
+    lines.push("💰 المبلغ النهائي: " + money(record.amount) + " جنيه");
 
     lines.forEach((line, i) => {
       if (i > 0) item.appendChild(document.createElement("br"));
@@ -516,6 +575,31 @@ function renderRoom(room) {
     });
 
     historyElement.appendChild(item);
+  });
+}
+
+function renderShiftsHistory() {
+  const container = document.getElementById("shiftsHistoryContainer");
+  if (!container) return;
+
+  container.replaceChildren();
+  const shifts = data.shiftsHistory || [];
+
+  if (!shifts.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "لا توجد ورديات مسجلة حتى الآن.";
+    container.appendChild(empty);
+    return;
+  }
+
+  shifts.forEach((shift, index) => {
+    const item = document.createElement("div");
+    item.className = "history-item";
+    item.innerHTML = `📌 <strong>وردية رقم (${shifts.length - index})</strong><br>
+      📅 تاريخ الإغلاق: ${formatDate(shift.date)}<br>
+      💰 إجمالي إيرادات الوردية: <strong>${money(shift.totalAmount)} جنيه</strong>`;
+    container.appendChild(item);
   });
 }
 
@@ -531,8 +615,15 @@ function updateTimers() {
   roomData.forEach((room, index) => {
     if (data.active && data.active[index]) {
       const timerEl = document.getElementById("timer" + index);
+      const liveAmountEl = document.getElementById("liveAmount" + index);
+      
       if (timerEl) {
         timerEl.textContent = formatDuration(elapsed(index));
+      }
+      if (liveAmountEl) {
+        let currentDuration = elapsed(index);
+        let currentAmount = (currentDuration / 3600000) * roomData[index].price;
+        liveAmountEl.textContent = `المبلغ الحالي: ${money(currentAmount)} جنيه`;
       }
     }
   });
@@ -543,6 +634,7 @@ function renderAll() {
     renderRoom(index);
   });
   updateTotal();
+  renderShiftsHistory();
   updateTimers();
 }
 
