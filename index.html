@@ -199,7 +199,6 @@ button:disabled,
   overflow-wrap: anywhere;
 }
 
-/* زر حذف الجلسة */
 .delete-btn {
   position: absolute;
   top: 10px;
@@ -321,12 +320,6 @@ function checkPassword() {
   }
 }
 
-window.onload = function() {
-  if (sessionStorage.getItem("loggedIn") === "true") {
-    document.getElementById("loginOverlay").style.display = "none";
-  }
-};
-
 const firebaseConfig = {
   apiKey: "AIzaSyBGDsQYq_ry3hx56Ezhpn2Gy5kGaeUCGQE",
   authDomain: "level-up-63005.firebaseapp.com",
@@ -351,7 +344,13 @@ const roomData = [
   { name: "🎱 Billiards", price: 80 }
 ];
 
-let data = {
+// استرجاع البيانات المحفوظة محلياً إن وجدت لتفادي التصفير عند بداية التحميل
+let localBackup = null;
+try {
+  localBackup = JSON.parse(localStorage.getItem("levelUpBackup"));
+} catch(e) {}
+
+let data = localBackup || {
   totals: [0, 0, 0, 0, 0, 0],
   histories: [[], [], [], [], [], []],
   active: [null, null, null, null, null, null],
@@ -405,19 +404,30 @@ roomData.forEach((room, index) => {
   roomsContainer.appendChild(card);
 });
 
+// حفظ البيانات في Firebase وكذلك في التخزين المحلي لضمان عدم الضياع
 function saveData() {
+  try {
+    localStorage.setItem("levelUpBackup", JSON.stringify(data));
+  } catch(e) {}
+
   dbRef.set(data).catch(error => {
-    alert("تعذر حفظ البيانات في السحابة: " + error.message);
+    console.error("تعذر الحفظ في السحابة: ", error);
   });
 }
 
+// الاستماع للبيانات وحمايتها من التصفير
 dbRef.on("value", (snapshot) => {
   const val = snapshot.val();
   if (val) {
-    data.totals = val.totals || [0, 0, 0, 0, 0, 0];
-    data.histories = val.histories ? val.histories.map(h => h || []) : [[], [], [], [], [], []];
-    data.active = val.active || [null, null, null, null, null, null];
-    data.shiftsHistory = val.shiftsHistory || [];
+    if (val.totals) data.totals = val.totals;
+    if (val.histories) data.histories = val.histories.map(h => h || []);
+    if (val.active) data.active = val.active;
+    if (val.shiftsHistory) data.shiftsHistory = val.shiftsHistory;
+    
+    // حفظ نسخة محلية احتياطية
+    try {
+      localStorage.setItem("levelUpBackup", JSON.stringify(data));
+    } catch(e) {}
   }
   renderAll();
 }, (error) => {
@@ -462,6 +472,7 @@ function startTimer(room) {
 
   data.active[room] = { start: start };
   saveData();
+  renderAll();
 }
 
 function stopTimer(room) {
@@ -503,18 +514,14 @@ function stopTimer(room) {
   renderAll();
 }
 
-// دالة حذف جلسة مسجلة بالخطأ
 function deleteRecord(room, recordId) {
   const historyList = data.histories[room] || [];
-  const index = historyList.findIndex(r => r.id === recordId || (r.start === recordId)); // دعم المعرف القديم والجديد
+  const index = historyList.findIndex(r => r.id === recordId || (r.start === recordId));
 
   if (index !== -1) {
     const record = historyList[index];
     if (confirm(`هل أنت متأكد من حذف هذه الجلسة بقيمة ${money(record.amount)} جنيه؟`)) {
-      // خصم المبلغ من إجمالي الغرفة
       data.totals[room] = Math.max(0, (data.totals[room] || 0) - record.amount);
-      
-      // حذف الجلسة من السجل
       data.histories[room].splice(index, 1);
 
       saveData();
@@ -598,7 +605,6 @@ function renderRoom(room) {
 
     const recordId = record.id || record.start;
 
-    // إضافة زر الحذف
     const delBtn = document.createElement("button");
     delBtn.className = "delete-btn";
     delBtn.textContent = "🗑️ حذف";
@@ -685,6 +691,13 @@ function renderAll() {
   renderShiftsHistory();
   updateTimers();
 }
+
+window.onload = function() {
+  if (sessionStorage.getItem("loggedIn") === "true") {
+    document.getElementById("loginOverlay").style.display = "none";
+  }
+  renderAll();
+};
 
 setInterval(updateTimers, 1000);
 </script>
